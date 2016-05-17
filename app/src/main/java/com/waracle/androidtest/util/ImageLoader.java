@@ -1,7 +1,8 @@
-package com.waracle.androidtest;
+package com.waracle.androidtest.util;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.AsyncTask;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
@@ -19,6 +20,8 @@ public class ImageLoader {
 
     private static final String TAG = ImageLoader.class.getSimpleName();
 
+    private static MemoryCache memoryCache = new MemoryCache();
+
     public ImageLoader() { /**/ }
 
     /**
@@ -27,22 +30,44 @@ public class ImageLoader {
      * @param url       image url
      * @param imageView view to set image too.
      */
-    public void load(String url, ImageView imageView) {
+    public void load(final String url, final ImageView imageView) {
         if (TextUtils.isEmpty(url)) {
             throw new InvalidParameterException("URL is empty!");
         }
 
-        // Can you think of a way to improve loading of bitmaps
-        // that have already been loaded previously??
-
-        try {
-            setImageView(imageView, convertToBitmap(loadImageData(url)));
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
+        Bitmap bitmap = memoryCache.get(url);
+        if (bitmap != null) {
+            imageView.setImageBitmap(bitmap);
+            return;
         }
+
+        AsyncTask task = new AsyncTask() {
+            @Override
+            protected Object doInBackground(Object[] objects) {
+                try {
+                    return loadImageData(url);
+                } catch (IOException e) {
+                    Log.e(TAG, e.getMessage());
+                }
+                return null;
+            }
+
+            @Override
+            protected void onPostExecute(Object o) {
+                super.onPostExecute(o);
+
+                Bitmap bmp = convertToBitmap((byte[]) o);
+                memoryCache.put(url, bmp);
+                setImageView(imageView, bmp);
+            }
+        };
+        task.execute();
+
     }
 
+
     private static byte[] loadImageData(String url) throws IOException {
+
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         InputStream inputStream = null;
         try {
@@ -56,6 +81,7 @@ public class ImageLoader {
 
             // Can you think of a way to make the entire
             // HTTP more efficient using HTTP headers??
+
 
             return StreamUtils.readUnknownFully(inputStream);
         } finally {
