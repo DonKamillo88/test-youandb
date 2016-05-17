@@ -13,6 +13,18 @@ import java.util.Map;
 public class MemoryCache {
     private Map<String, SoftReference<Bitmap>> cache = Collections.synchronizedMap(new HashMap<String, SoftReference<Bitmap>>());
 
+    private static MemoryCache memoryCacheInstance;
+
+    private MemoryCache() {
+    }
+
+    public static MemoryCache getMemoryCacheInstance() {
+        if (memoryCacheInstance == null) {
+            memoryCacheInstance = new MemoryCache();
+        }
+        return memoryCacheInstance;
+    }
+
     public Bitmap get(String id) {
         if (!cache.containsKey(id))
             return null;

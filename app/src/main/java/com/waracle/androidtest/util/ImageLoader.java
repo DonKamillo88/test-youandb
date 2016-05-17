@@ -20,9 +20,14 @@ public class ImageLoader {
 
     private static final String TAG = ImageLoader.class.getSimpleName();
 
-    private static MemoryCache memoryCache = new MemoryCache();
 
-    public ImageLoader() { /**/ }
+    public ImageLoader() {
+    }
+
+
+    public void clearCache() {
+            MemoryCache.getMemoryCacheInstance().clear();
+    }
 
     /**
      * Simple function for loading a bitmap image from the web
@@ -35,7 +40,7 @@ public class ImageLoader {
             throw new InvalidParameterException("URL is empty!");
         }
 
-        Bitmap bitmap = memoryCache.get(url);
+        Bitmap bitmap = MemoryCache.getMemoryCacheInstance().get(url);
         if (bitmap != null) {
             imageView.setImageBitmap(bitmap);
             return;
@@ -57,7 +62,7 @@ public class ImageLoader {
                 super.onPostExecute(o);
 
                 Bitmap bmp = convertToBitmap((byte[]) o);
-                memoryCache.put(url, bmp);
+                MemoryCache.getMemoryCacheInstance().put(url, bmp);
                 setImageView(imageView, bmp);
             }
         };
